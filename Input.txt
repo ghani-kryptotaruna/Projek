@@ -1,0 +1,89 @@
+Versi ubuntu 24.04 LTS
+
+$ sudo apt update && sudo apt upgrade -y
+
+$ sudo timedatectl set-timezone Asia/Jakarta 
+
+$ date
+Fri Mar 20 07:08:21 AM WIB 2026
+
+$ sudo vim /etc/hosts
+192.168.5.250 lb
+192.168.5.251 app1
+192.168.5.252 app2
+192.168.5.253 db
+192.168.5.254 minio
+
+Jika pakai sumber internetnya dari wifi maka settingan netplannya seperti dibawah ini
+contoh: 
+
+$ sudo vim /etc/netplan/50-cloud-init.yaml 
+network:
+  version: 2
+  ethernets:
+    enp0s3:
+      dhcp4: no
+      addresses:
+        - 192.168.5.253/24
+      gateway4: 192.168.5.1
+      nameservers:
+        addresses: [8.8.8.8, 1.1.1.1]
+
+$ sudo netplan apply
+
+$ sudo systemctl restart systemd-resolved
+
+$ sudo vim /etc/resolv.conf           # tambahkan dipaling bawah line 25
+nameserver 8.8.8.8
+
+$ sudo apt update
+
+Jika sumber internetnya dari kabel lan maka settingan netplan nya seperti dibawah ini
+contoh:
+
+$ sudo vim /etc/netplan/50-cloud-init.yaml
+network:
+  version: 2
+  ethernets:
+    enp0s3:
+      dhcp4: no
+      addresses:
+        - 192.168.4.191/24
+      routes:
+        - to: default
+          via: 192.168.4.1
+      nameservers:
+        addresses:
+          - 192.168.4.1
+          - 8.8.8.8
+
+$ sudo netplan apply
+
+Konfigurasi data base
+$ sudo apt install postgresql -y
+
+$ sudo apt list postgresql
+Listing... Done
+postgresql/noble-updates,now 16+257build1.1 all [installed]
+N: There is 1 additional version. Please use the '-a' switch to see it
+
+$ sudo vim /etc/postgresql/*/main/postgresql.conf        #cari di line 60
+listen_addresses = '*'
+
+$ sudo nano /etc/postgresql/*/main/pg_hba.conf           #tambahkan dipaling bawah line 133
+host    all             all             192.168.5.0/24          md5
+
+$ sudo systemctl restart postgresql
+
+$ sudo -u postgres psql
+psql (16.13 (Ubuntu 16.13-0ubuntu0.24.04.1))
+Type "help" for help.
+
+postgres=# CREATE DATABASE nextcloud;
+CREATE USER ncuser WITH PASSWORD 'passwordku';
+ALTER DATABASE nextcloud OWNER TO ncuser;
+\q
+CREATE DATABASE
+CREATE ROLE
+ALTER DATABASE
+
