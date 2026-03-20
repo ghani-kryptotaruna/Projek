@@ -114,3 +114,166 @@ SSL connection (protocol: TLSv1.3, cipher: TLS_AES_256_GCM_SHA384, compression: 
 Type "help" for help.
 
 nextcloud=> 
+
+Masuk ke VM minio
+
+$ wget https://dl.min.io/server/minio/release/linux-amd64/minio
+
+$ ls -l
+total 108392
+-rw-rw-r-- 1 ghani ghani 110989496 Sep  8  2025 minio
+
+$ chmod +x minio
+
+$ sudo mv minio /usr/local/bin/
+
+$ sudo useradd -r minio-user -s /sbin/nologin
+
+$ sudo mkdir -p /data/minio
+
+$ sudo chown minio-user:minio-user /data/minio
+
+$ sudo nano /etc/default/minio
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=minioadmin123
+MINIO_VOLUMES="/data/minio"
+MINIO_OPTS="--address :9000 --console-address :9001"
+
+$ sudo nano /etc/systemd/system/minio.service
+[Unit]
+Description=MinIO
+After=network.target
+
+[Service]
+User=minio-user
+Group=minio-user
+EnvironmentFile=/etc/default/minio
+ExecStart=/usr/local/bin/minio server $MINIO_VOLUMES $MINIO_OPTS
+Restart=always
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target
+
+$ sudo systemctl daemon-reexec
+
+$ sudo systemctl daemon-reload
+
+$ sudo systemctl enable minio
+Created symlink /etc/systemd/system/multi-user.target.wants/minio.service → /etc/systemd/system/minio.service.
+
+$ sudo systemctl start minio
+
+$ sudo systemctl status minio
+● minio.service - MinIO
+     Loaded: loaded (/etc/systemd/system/minio.service; enabled; preset: enabled)
+     Active: active (running) since Fri 2026-03-20 08:17:06 WIB; 6s ago
+   Main PID: 2373 (minio)
+      Tasks: 8 (limit: 4601)
+     Memory: 72.5M (peak: 72.8M)
+        CPU: 475ms
+     CGroup: /system.slice/minio.service
+             └─2373 /usr/local/bin/minio server /data/minio --address :9000 --console-address :9001
+
+Mar 20 08:17:06 minio systemd[1]: Started minio.service - MinIO.
+Mar 20 08:17:07 minio minio[2373]: INFO: Formatting 1st pool, 1 set(s), 1 drives per set.
+Mar 20 08:17:07 minio minio[2373]: INFO: WARNING: Host local has more than 0 drives of set. A host failure will result in data becoming unavailable.
+Mar 20 08:17:07 minio minio[2373]: MinIO Object Storage Server
+Mar 20 08:17:07 minio minio[2373]: Copyright: 2015-2026 MinIO, Inc.
+Mar 20 08:17:07 minio minio[2373]: License: GNU AGPLv3 - https://www.gnu.org/licenses/agpl-3.0.html
+Mar 20 08:17:07 minio minio[2373]: Version: RELEASE.2025-09-07T16-13-09Z (go1.24.6 linux/amd64)
+Mar 20 08:17:07 minio minio[2373]: API: http://192.168.5.254:9000  http://127.0.0.1:9000
+Mar 20 08:17:07 minio minio[2373]: WebUI: http://192.168.5.254:9001 http://127.0.0.1:9001
+Mar 20 08:17:07 minio minio[2373]: Docs: https://docs.min.io
+
+Lalu akses ke browser menggunakan ip 
+contoh:
+http://IP-SERVER:9001
+http://192.168.5.254:9001
+
+lalu masukkan username dan password, untuk melihat username dan password ada di:
+$ sudo nano /etc/default/minio
+USER=minioadmin
+PASSWORD=minioadmin12
+
+$ wget https://dl.min.io/client/mc/release/linux-amd64/mc
+
+$ ls -l
+total 29824
+-rw-rw-r-- 1 ghani ghani 30535864 Sep  7  2025 mc
+
+$ chmod +x mc
+
+$ sudo mv mc /usr/local/bin/
+
+$ mc alias set myminio http://192.168.5.254:9000 minioadmin minioadmin123
+mc: Configuration written to `/home/ghani/.mc/config.json`. Please update your access credentials.
+mc: Successfully created `/home/ghani/.mc/share`.
+mc: Initialized share uploads `/home/ghani/.mc/share/uploads.json` file.
+mc: Initialized share downloads `/home/ghani/.mc/share/downloads.json` file.
+Added `myminio` successfully.
+
+$ mc mb myminio/nextcloud
+Bucket created successfully `myminio/nextcloud`.
+
+Masuk ke VM1
+
+$ sudo apt install -y nginx php-fpm php-pgsql php-gd php-curl php-xml php-zip php-mbstring php-intl php-bcmath php-gmp php-imagick unzip
+
+$ cd /var/www
+
+$ sudo wget https://download.nextcloud.com/server/releases/latest.zip
+
+$ ls -l
+total 305060
+drwxr-xr-x 2 root root      4096 Mar 20 08:34 html
+-rw-r--r-- 1 root root 312374077 Feb 18 00:47 latest.zip
+
+$ sudo unzip latest.zip
+
+$ ls -l
+total 305064
+drwxr-xr-x  2 root root      4096 Mar 20 08:34 html
+-rw-r--r--  1 root root 312374077 Feb 18 00:47 latest.zip
+drwxr-xr-x 14 root root      4096 Feb 18 00:43 nextcloud
+
+$ sudo chown -R www-data:www-data nextcloud
+
+$ cd
+
+$ sudo vim /etc/nginx/sites-available/nextcloud
+server {
+    listen 80;
+    server_name _;
+
+    root /var/www/nextcloud;
+    index index.php;
+
+    location / {
+        try_files $uri $uri/ /index.php;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+}
+
+$ sudo ln -s /etc/nginx/sites-available/nextcloud /etc/nginx/sites-enabled/
+
+$ sudo nginx -t
+2026/03/20 08:55:22 [warn] 14991#14991: conflicting server name "_" on 0.0.0.0:80, ignored
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+
+$ sudo systemctl restart nginx
+
+lalu akses di browser
+http://IP_APP
+http://192.168.5.251/
+nanti akan muncul welcome to nginx
+
