@@ -277,3 +277,29 @@ http://IP_APP
 http://192.168.5.251/
 nanti akan muncul welcome to nginx
 
+$ sudo rm /etc/nginx/sites-enabled/default
+[sudo] password for ghani: 
+
+$ ls /etc/nginx/sites-available/
+default  nextcloud
+
+$ ls -l /etc/nginx/sites-enabled/
+total 0
+lrwxrwxrwx 1 root root 36 Mar 20 08:55 nextcloud -> /etc/nginx/sites-available/nextcloud
+
+$ sudo systemctl reload nginx
+
+Nextcloud
+melihat user yang sudah terdaftar di nextcloud
+
+$ sudo -u www-data php /var/www/nextcloud/occ user:list
+[sudo] password for ghani: 
+  - ghani-cloud: ghani-cloud
+
+Cara reset passwordnya, gunakan password yang kuat
+contoh : ghanicloud-1007
+ghani@app1:~$ sudo -u www-data php /var/www/nextcloud/occ user:resetpassword ghani-cloud
+Enter a new password: 
+Confirm the new password: 
+Successfully reset password for ghani-cloud
+
