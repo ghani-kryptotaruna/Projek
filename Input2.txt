@@ -1,0 +1,101 @@
+Buat 3 Virtualmechine dengan ip sebagai berikut:
+VM1 = load balancer 192.168.4.250
+VM2 = APP1 192.168.4.251
+VM3 = APP1 192.168.4.252
+
+lalukan update di semua VM dengan perintah:
+$ sudo apt update && sudo apt upgrade -y
+
+Atur waktunya menjadi Asia/Jakarta dengan perintah:
+$ sudo timedatectl set-timezone Asia/Jakarta
+
+Lalu cek dengan perintah
+$ date
+Sat Mar 28 02:19:53 PM WIB 2026
+
+Ubah masing masing hostname
+
+Masuk ke VM1 lalu install dan konfigurasi haproxy
+$ sudo apt update
+$ sudo apt install haproxy keepalived -y
+
+$ sudo vim /etc/haproxy/haproxy.cfg
+global
+    log /dev/log local0
+    maxconn 2048
+
+defaults
+    mode http
+    timeout connect 10s
+    timeout client  300s
+    timeout server  300s
+
+frontend http_front
+    bind *:80
+    default_backend nextcloud_cluster
+
+backend nextcloud_cluster
+    balance roundrobin
+    option httpchk
+
+    default-server inter 2s fall 2 rise 1
+
+    server vm2 192.168.4.251:80 check
+    server vm3 192.168.4.252:80 check
+
+$ sudo systemctl restart haproxy
+
+$ sudo vim /etc/keepalived/keepalived.conf
+global_defs {
+   script_security 1
+}
+
+vrrp_instance VI_1 {
+    state MASTER
+    interface enp0s3
+    virtual_router_id 51
+    priority 100
+    advert_int 1
+
+    authentication {
+        auth_type PASS
+        auth_pass ncpass   # max 8 karakter!
+    }
+
+    virtual_ipaddress {
+        192.168.4.100
+    }
+}                                    20,1          All
+
+$ sudo systemctl enable keepalived
+$ sudo systemctl start keepalived
+
+Pastikan keepalived berjalan cek menggunakan perintah dibawah ini
+
+$ sudo systemctl status keepalived.service 
+● keepalived.service - Keepalive Daemon (LVS and VRRP)
+     Loaded: loaded (/usr/lib/systemd/system/keepalived.service; enabled; preset: enabled)
+     Active: active (running) since Sat 2026-03-28 14:10:11 WIB; 14min ago
+       Docs: man:keepalived(8)
+             man:keepalived.conf(5)
+             man:genhash(1)
+             https://keepalived.org
+   Main PID: 661 (keepalived)
+      Tasks: 2 (limit: 4601)
+     Memory: 5.0M (peak: 5.2M)
+        CPU: 81ms
+     CGroup: /system.slice/keepalived.service
+             ├─661 /usr/sbin/keepalived --dont-fork
+             └─708 /usr/sbin/keepalived --dont-fork
+
+Mar 28 14:10:11 load-balancer Keepalived[661]: Running on Linux 6.8.0-106-generic #106-Ubuntu SMP PREEMPT_DYNAMIC Fri Mar  6 07:58:08 UTC 2026 (built for Linu>
+Mar 28 14:10:11 load-balancer Keepalived[661]: Command line: '/usr/sbin/keepalived' '--dont-fork'
+Mar 28 14:10:11 load-balancer Keepalived[661]: Configuration file /etc/keepalived/keepalived.conf
+Mar 28 14:10:11 load-balancer Keepalived[661]: (Line 2) Unknown keyword 'script_security'
+Mar 28 14:10:11 load-balancer Keepalived[661]: NOTICE: setting config option max_auto_priority should result in better keepalived performance
+Mar 28 14:10:11 load-balancer Keepalived[661]: Starting VRRP child process, pid=708
+Mar 28 14:10:11 load-balancer Keepalived[661]: Startup complete
+Mar 28 14:10:11 load-balancer systemd[1]: Started keepalived.service - Keepalive Daemon (LVS and VRRP).
+Mar 28 14:10:11 load-balancer Keepalived_vrrp[708]: (VI_1) Entering BACKUP STATE (init)
+Mar 28 14:10:15 load-balancer Keepalived_vrrp[708]: (VI_1) Entering MASTER STATE
+
