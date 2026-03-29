@@ -1,0 +1,45 @@
+$ sudo mysql -u root -e "SHOW STATUS LIKE 'wsrep_cluster_size';"
++--------------------+-------+
+| Variable_name      | Value |
++--------------------+-------+
+| wsrep_cluster_size | 0     |
++--------------------+-------+
+
+
+###Output Anda: ❌ SALAH
+###Target: ✅ 3
+
+###Repair
+Matikan mariadb si semua VM
+$ sudo systemctl stop mariadb
+$ sudo systemctl status mariadb
+○ mariadb.service - MariaDB 10.11.14 database server
+     Loaded: loaded (/usr/lib/systemd/system/mariadb.service; enabled; preset: enabled)
+     Active: inactive (dead) since Sun 2026-03-29 09:54:26 WIB; 33s ago
+   Duration: 17min 18.749s
+       Docs: man:mariadbd(8)
+             https://mariadb.com/kb/en/library/systemd/
+    Process: 6569 ExecStartPre=/usr/bin/install -m 755 -o mysql -g root -d /var/run/mysqld (code=exited, status=0/SUCCESS)
+    Process: 6571 ExecStartPre=/bin/sh -c systemctl unset-environment _WSREP_START_POSITION (code=exited, status=0/SUCCESS)
+    Process: 6573 ExecStartPre=/bin/sh -c [ ! -e /usr/bin/galera_recovery ] && VAR= ||   VAR=`/usr/bin/galera_recovery`; [ $? -eq 0 ]   && systemctl set-envir>
+    Process: 6674 ExecStart=/usr/sbin/mariadbd $MYSQLD_OPTS $_WSREP_NEW_CLUSTER $_WSREP_START_POSITION (code=exited, status=0/SUCCESS)
+    Process: 6687 ExecStartPost=/bin/sh -c systemctl unset-environment _WSREP_START_POSITION (code=exited, status=0/SUCCESS)
+    Process: 6689 ExecStartPost=/etc/mysql/debian-start (code=exited, status=0/SUCCESS)
+   Main PID: 6674 (code=exited, status=0/SUCCESS)
+     Status: "MariaDB server is down"
+        CPU: 804ms
+
+Mar 29 09:54:24 load-balancer mariadbd[6674]: 2026-03-29  9:54:24 0 [Note] /usr/sbin/mariadbd (initiated by: unknown): Normal shutdown
+Mar 29 09:54:24 load-balancer mariadbd[6674]: 2026-03-29  9:54:24 0 [Note] InnoDB: FTS optimize thread exiting.
+Mar 29 09:54:25 load-balancer mariadbd[6674]: 2026-03-29  9:54:25 0 [Note] InnoDB: Starting shutdown...
+Mar 29 09:54:25 load-balancer mariadbd[6674]: 2026-03-29  9:54:25 0 [Note] InnoDB: Dumping buffer pool(s) to /var/lib/mysql/ib_buffer_pool
+Mar 29 09:54:25 load-balancer mariadbd[6674]: 2026-03-29  9:54:25 0 [Note] InnoDB: Buffer pool(s) dump completed at 260329  9:54:25
+Mar 29 09:54:26 load-balancer mariadbd[6674]: 2026-03-29  9:54:26 0 [Note] InnoDB: Removed temporary tablespace data file: "./ibtmp1"
+Mar 29 09:54:26 load-balancer mariadbd[6674]: 2026-03-29  9:54:26 0 [Note] InnoDB: Shutdown completed; log sequence number 46846; transaction id 15
+Mar 29 09:54:26 load-balancer mariadbd[6674]: 2026-03-29  9:54:26 0 [Note] /usr/sbin/mariadbd: Shutdown complete
+Mar 29 09:54:26 load-balancer systemd[1]: mariadb.service: Deactivated successfully.
+Mar 29 09:54:26 load-balancer systemd[1]: Stopped mariadb.service - MariaDB 10.11.14 database server.
+
+Reset Galera state (SEMUA VM)
+$ sudo rm -f /var/lib/mysql/grastate.dat
+
