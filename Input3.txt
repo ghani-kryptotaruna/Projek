@@ -18,3 +18,127 @@ Listing... Done
 galera-4/noble,now 26.4.16-2build4 amd64 [installed]
 mariadb-server/noble-updates,now 1:10.11.14-0ubuntu0.24.04.1 amd64 [installed]
 rsync/noble-updates,noble-security,now 3.2.7-1ubuntu1.2 amd64 [installed]
+
+$ sudo systemctl stop mariadb
+
+$ sudo systemctl status mariadb
+
+
+###Masuk ke VM1#######
+$ sudo nano /etc/mysql/mariadb.conf.d/60-galera.cnf
+[galera]
+wsrep_on=ON
+wsrep_cluster_name="nextcloud_cluster"
+wsrep_cluster_address="gcomm://192.168.4.250,192.168.4.251,192.168.4.252"
+
+wsrep_node_address="192.168.4.250"
+wsrep_node_name="load-balancer"
+
+wsrep_sst_method=rsync
+
+binlog_format=row
+default_storage_engine=InnoDB
+innodb_autoinc_lock_mode=2
+
+
+###Masuk ke VM2######
+$ sudo nano /etc/mysql/mariadb.conf.d/60-galera.cnf
+[galera]
+wsrep_on=ON
+wsrep_cluster_name="nextcloud_cluster"
+wsrep_cluster_address="gcomm://192.168.4.250,192.168.4.251,192.168.4.252"
+
+wsrep_node_address="192.168.4.251"
+wsrep_node_name="APP1"
+
+wsrep_sst_method=rsync
+
+binlog_format=row
+default_storage_engine=InnoDB
+innodb_autoinc_lock_mode=2
+
+
+###Masuk ke VM3######
+$ sudo nano /etc/mysql/mariadb.conf.d/60-galera.cnf
+[galera]
+wsrep_on=ON
+wsrep_cluster_name="nextcloud_cluster"
+wsrep_cluster_address="gcomm://192.168.4.250,192.168.4.251,192.168.4.252"
+
+wsrep_node_address="192.168.4.252"
+wsrep_node_name="APP2"
+
+wsrep_sst_method=rsync
+
+binlog_format=row
+default_storage_engine=InnoDB
+innodb_autoinc_lock_mode=2                                  7,21          All
+
+Jalankan perintah berikut ini hanya di VM1
+$ sudo galera_new_cluster
+
+#####Masuk ke VM2#####
+$ sudo systemctl start mariadb
+$ sudo systemctl status mariadb
+● mariadb.service - MariaDB 10.11.14 database server
+     Loaded: loaded (/usr/lib/systemd/system/mariadb.service; enabled; preset: enabled)
+     Active: active (running) since Sun 2026-03-29 09:33:33 WIB; 6min ago
+       Docs: man:mariadbd(8)
+             https://mariadb.com/kb/en/library/systemd/
+    Process: 2026 ExecStartPre=/usr/bin/install -m 755 -o mysql -g root -d /var/run/mysqld (code=exited, status=0/SUCCESS)
+    Process: 2027 ExecStartPre=/bin/sh -c systemctl unset-environment _WSREP_START_POSITION (code=exited, status=0/SUCCESS)
+    Process: 2029 ExecStartPre=/bin/sh -c [ ! -e /usr/bin/galera_recovery ] && VAR= ||   VAR=`/usr/bin/galera_recovery`; [ $? -eq 0 ]   && systemctl set-envir>
+    Process: 2144 ExecStartPost=/bin/sh -c systemctl unset-environment _WSREP_START_POSITION (code=exited, status=0/SUCCESS)
+    Process: 2146 ExecStartPost=/etc/mysql/debian-start (code=exited, status=0/SUCCESS)
+   Main PID: 2131 (mariadbd)
+     Status: "Taking your SQL requests now..."
+      Tasks: 9 (limit: 30368)
+     Memory: 78.7M (peak: 81.8M)
+        CPU: 622ms
+     CGroup: /system.slice/mariadb.service
+             └─2131 /usr/sbin/mariadbd
+
+Mar 29 09:33:32 APP1 mariadbd[2131]: 2026-03-29  9:33:32 0 [Note] InnoDB: log sequence number 46846; transaction id 14
+Mar 29 09:33:32 APP1 mariadbd[2131]: 2026-03-29  9:33:32 0 [Note] InnoDB: Loading buffer pool(s) from /var/lib/mysql/ib_buffer_pool
+Mar 29 09:33:32 APP1 mariadbd[2131]: 2026-03-29  9:33:32 0 [Note] Plugin 'FEEDBACK' is disabled.
+Mar 29 09:33:32 APP1 mariadbd[2131]: 2026-03-29  9:33:32 0 [Warning] You need to use --log-bin to make --expire-logs-days or --binlog-expire-logs-seconds work.
+Mar 29 09:33:32 APP1 mariadbd[2131]: 2026-03-29  9:33:32 0 [Note] Server socket created on IP: '127.0.0.1', port: '3306'.
+Mar 29 09:33:32 APP1 mariadbd[2131]: 2026-03-29  9:33:32 0 [Note] InnoDB: Buffer pool(s) load completed at 260329  9:33:32
+Mar 29 09:33:33 APP1 mariadbd[2131]: 2026-03-29  9:33:33 0 [Note] /usr/sbin/mariadbd: ready for connections.
+Mar 29 09:33:33 APP1 mariadbd[2131]: Version: '10.11.14-MariaDB-0ubuntu0.24.04.1'  socket: '/run/mysqld/mysqld.sock'  port: 3306  Ubuntu 24.04
+Mar 29 09:33:33 APP1 systemd[1]: Started mariadb.service - MariaDB 10.11.14 database server.
+Mar 29 09:33:33 APP1 /etc/mysql/debian-start[2164]: Triggering myisam-recover for all MyISAM tables and aria-recover for all Aria tables
+
+
+####Masuk ke VM3###
+$ sudo systemctl start mariadb
+$ sudo systemctl status mariadb
+● mariadb.service - MariaDB 10.11.14 database server
+     Loaded: loaded (/usr/lib/systemd/system/mariadb.service; enabled; preset: enabled)
+     Active: active (running) since Sun 2026-03-29 09:33:45 WIB; 7min ago
+       Docs: man:mariadbd(8)
+             https://mariadb.com/kb/en/library/systemd/
+    Process: 7763 ExecStartPre=/usr/bin/install -m 755 -o mysql -g root -d /var/run/mysqld (code=exited, status=0/SUCCESS)
+    Process: 7764 ExecStartPre=/bin/sh -c systemctl unset-environment _WSREP_START_POSITION (code=exited, status=0/SUCCESS)
+    Process: 7766 ExecStartPre=/bin/sh -c [ ! -e /usr/bin/galera_recovery ] && VAR= ||   VAR=`/usr/bin/galera_recovery`; [ $? -eq 0 ]   && systemctl set-envir>
+    Process: 7882 ExecStartPost=/bin/sh -c systemctl unset-environment _WSREP_START_POSITION (code=exited, status=0/SUCCESS)
+    Process: 7884 ExecStartPost=/etc/mysql/debian-start (code=exited, status=0/SUCCESS)
+   Main PID: 7869 (mariadbd)
+     Status: "Taking your SQL requests now..."
+      Tasks: 9 (limit: 30368)
+     Memory: 78.6M (peak: 81.8M)
+        CPU: 629ms
+     CGroup: /system.slice/mariadb.service
+             └─7869 /usr/sbin/mariadbd
+
+Mar 29 09:33:44 APP2 mariadbd[7869]: 2026-03-29  9:33:44 0 [Note] Plugin 'FEEDBACK' is disabled.
+Mar 29 09:33:44 APP2 mariadbd[7869]: 2026-03-29  9:33:44 0 [Note] InnoDB: Loading buffer pool(s) from /var/lib/mysql/ib_buffer_pool
+Mar 29 09:33:44 APP2 mariadbd[7869]: 2026-03-29  9:33:44 0 [Warning] You need to use --log-bin to make --expire-logs-days or --binlog-expire-logs-seconds work.
+Mar 29 09:33:44 APP2 mariadbd[7869]: 2026-03-29  9:33:44 0 [Note] Server socket created on IP: '127.0.0.1', port: '3306'.
+Mar 29 09:33:45 APP2 mariadbd[7869]: 2026-03-29  9:33:45 0 [Note] InnoDB: Buffer pool(s) load completed at 260329  9:33:45
+Mar 29 09:33:45 APP2 mariadbd[7869]: 2026-03-29  9:33:45 0 [Note] /usr/sbin/mariadbd: ready for connections.
+Mar 29 09:33:45 APP2 mariadbd[7869]: Version: '10.11.14-MariaDB-0ubuntu0.24.04.1'  socket: '/run/mysqld/mysqld.sock'  port: 3306  Ubuntu 24.04
+Mar 29 09:33:45 APP2 systemd[1]: Started mariadb.service - MariaDB 10.11.14 database server.
+Mar 29 09:33:45 APP2 /etc/mysql/debian-start[7898]: Checking for insecure root accounts.
+Mar 29 09:33:45 APP2 /etc/mysql/debian-start[7902]: Triggering myisam-recover for all MyISAM tables and aria-recover for all Aria tables
+
