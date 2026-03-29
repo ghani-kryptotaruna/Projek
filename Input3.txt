@@ -5,3 +5,10 @@ $ sudo apt install -y net-tools curl wget unzip software-properties-common
 
 $ sudo apt update
 
+$ sudo nano /etc/hosts
+127.0.0.1 localhost
+192.168.4.250 load-balancer
+192.168.4.251 APP1
+192.168.4.252 APP2
+
+$ 
