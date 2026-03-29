@@ -1,0 +1,7 @@
+Semua VM
+$ sudo apt update
+
+$ sudo apt install -y net-tools curl wget unzip software-properties-common
+
+$ sudo apt update
+
