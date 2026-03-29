@@ -11,4 +11,10 @@ $ sudo nano /etc/hosts
 192.168.4.251 APP1
 192.168.4.252 APP2
 
-$ 
+$ sudo apt install -y mariadb-server galera-4 rsync
+
+$ sudo apt list mariadb-server galera-4 rsync
+Listing... Done
+galera-4/noble,now 26.4.16-2build4 amd64 [installed]
+mariadb-server/noble-updates,now 1:10.11.14-0ubuntu0.24.04.1 amd64 [installed]
+rsync/noble-updates,noble-security,now 3.2.7-1ubuntu1.2 amd64 [installed]
