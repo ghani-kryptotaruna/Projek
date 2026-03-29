@@ -28,28 +28,36 @@ $ sudo systemctl status mariadb
 $ sudo nano /etc/mysql/mariadb.conf.d/60-galera.cnf
 [galera]
 wsrep_on=ON
+wsrep_provider=/usr/lib/galera/libgalera_smm.so
+
 wsrep_cluster_name="nextcloud_cluster"
 wsrep_cluster_address="gcomm://192.168.4.250,192.168.4.251,192.168.4.252"
 
-wsrep_node_address="192.168.4.250"
 wsrep_node_name="load-balancer"
+wsrep_node_address="192.168.4.250"
 
 wsrep_sst_method=rsync
 
 binlog_format=row
 default_storage_engine=InnoDB
 innodb_autoinc_lock_mode=2
+
+###Di line 27 ubah bind-addressnya menjadi 0.0.0.0
+$ sudo vim /etc/mysql/mariadb.conf.d/50-server.cnf
+bind-address            = 0.0.0.0
 
 
 ###Masuk ke VM2######
 $ sudo nano /etc/mysql/mariadb.conf.d/60-galera.cnf
 [galera]
 wsrep_on=ON
+wsrep_provider=/usr/lib/galera/libgalera_smm.so
+
 wsrep_cluster_name="nextcloud_cluster"
 wsrep_cluster_address="gcomm://192.168.4.250,192.168.4.251,192.168.4.252"
 
-wsrep_node_address="192.168.4.251"
 wsrep_node_name="APP1"
+wsrep_node_address="192.168.4.251"
 
 wsrep_sst_method=rsync
 
@@ -57,24 +65,34 @@ binlog_format=row
 default_storage_engine=InnoDB
 innodb_autoinc_lock_mode=2
 
+###Di line 27 ubah bind-addressnya menjadi 0.0.0.0
+$ sudo vim /etc/mysql/mariadb.conf.d/50-server.cnf
+bind-address            = 0.0.0.0
 
 ###Masuk ke VM3######
 $ sudo nano /etc/mysql/mariadb.conf.d/60-galera.cnf
 [galera]
 wsrep_on=ON
+wsrep_provider=/usr/lib/galera/libgalera_smm.so
+
 wsrep_cluster_name="nextcloud_cluster"
 wsrep_cluster_address="gcomm://192.168.4.250,192.168.4.251,192.168.4.252"
 
-wsrep_node_address="192.168.4.252"
 wsrep_node_name="APP2"
+wsrep_node_address="192.168.4.252"
 
 wsrep_sst_method=rsync
 
 binlog_format=row
 default_storage_engine=InnoDB
-innodb_autoinc_lock_mode=2                                  7,21          All
+innodb_autoinc_lock_mode=2
 
-Jalankan perintah berikut ini hanya di VM1
+###Di line 27 ubah bind-addressnya menjadi 0.0.0.0
+$ sudo vim /etc/mysql/mariadb.conf.d/50-server.cnf
+bind-address            = 0.0.0.0
+
+
+###Jalankan perintah berikut ini hanya di VM1
 $ sudo galera_new_cluster
 
 #####Masuk ke VM2#####
@@ -142,3 +160,10 @@ Mar 29 09:33:45 APP2 systemd[1]: Started mariadb.service - MariaDB 10.11.14 data
 Mar 29 09:33:45 APP2 /etc/mysql/debian-start[7898]: Checking for insecure root accounts.
 Mar 29 09:33:45 APP2 /etc/mysql/debian-start[7902]: Triggering myisam-recover for all MyISAM tables and aria-recover for all Aria tables
 
+###Masuk ke VM1###
+ghani@load-balancer:~$ sudo mysql -u root <<EOF
+CREATE DATABASE nextcloud;
+CREATE USER 'ncuser'@'%' IDENTIFIED BY 'passwordku';
+GRANT ALL PRIVILEGES ON nextcloud.* TO 'ncuser'@'%';
+FLUSH PRIVILEGES;
+EOF
