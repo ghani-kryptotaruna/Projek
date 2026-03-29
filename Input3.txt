@@ -167,3 +167,45 @@ CREATE USER 'ncuser'@'%' IDENTIFIED BY 'passwordku';
 GRANT ALL PRIVILEGES ON nextcloud.* TO 'ncuser'@'%';
 FLUSH PRIVILEGES;
 EOF
+
+$ sudo apt install -y nfs-kernel-server
+$ sudo apt list nfs-kernel-server
+Listing... Done
+nfs-kernel-server/noble-updates,now 1:2.6.4-3ubuntu5.1 amd64 [installed]
+N: There is 1 additional version. Please use the '-a' switch to see it
+
+$ sudo mkdir -p /var/ncdata
+$ sudo chown nobody:nogroup /var/ncdata
+
+$ sudo exportfs -a
+$ sudo systemctl restart nfs-kernel-server
+
+###Masuk ke VM2 dan VM3 jalankan perintah yang sama###
+$ sudo apt install -y nfs-common
+$ sudo apt list nfs-common 
+Listing... Done
+nfs-common/noble-updates,now 1:2.6.4-3ubuntu5.1 amd64 [installed]
+N: There is 1 additional version. Please use the '-a' switch to see it
+
+$ sudo mkdir -p /var/ncdata
+$ sudo mount 192.168.4.250:/var/ncdata /var/ncdata
+$ echo "192.168.4.250:/var/ncdata /var/ncdata nfs defaults 0 0" | sudo tee -a /etc/fstab
+192.168.4.250:/var/ncdata /var/ncdata nfs defaults 0 0
+
+
+
+$ sudo apt install -y nginx php-fpm php-mysql php-xml php-gd php-curl php-zip php-mbstring php-bcmath php-intl unzip
+$ sudo apt list nginx php-fpm php-mysql php-xml php-gd php-curl php-zip php-mbstring php-bcmath php-intl unzip
+Listing... Done
+nginx/noble-updates,noble-security,now 1.24.0-2ubuntu7.6 amd64 [installed]
+php-bcmath/noble,now 2:8.3+93ubuntu2 all [installed]
+php-curl/noble,now 2:8.3+93ubuntu2 all [installed]
+php-fpm/noble,now 2:8.3+93ubuntu2 all [installed]
+php-gd/noble,now 2:8.3+93ubuntu2 all [installed]
+php-intl/noble,now 2:8.3+93ubuntu2 all [installed]
+php-mbstring/noble,now 2:8.3+93ubuntu2 all [installed]
+php-mysql/noble,now 2:8.3+93ubuntu2 all [installed]
+php-xml/noble,now 2:8.3+93ubuntu2 all [installed]
+php-zip/noble,now 2:8.3+93ubuntu2 all [installed]
+unzip/noble-updates,noble-security,now 6.0-28ubuntu4.1 amd64 [installed]
+
