@@ -263,3 +263,107 @@ backend nextcloud_backend
     server vm3 192.168.4.252:80 check
 
 $ sudo systemctl restart haproxy
+
+###Masuk ke VM1 dan VM2###
+$ sudo apt install -y keepalived
+$ sudo apt list keepalived 
+Listing... Done
+keepalived/noble,now 1:2.2.8-1build2 amd64 [installed]
+
+
+###Konfigurasi untuk VM1
+$ sudo nano /etc/keepalived/keepalived.conf
+vrrp_instance VI_1 {
+    state MASTER
+    interface enp0s3
+    virtual_router_id 51
+    priority 101
+    advert_int 1
+
+    authentication {
+        auth_type PASS
+        auth_pass 1234
+    }
+
+    virtual_ipaddress {
+        192.168.4.100
+    }
+}
+
+
+$ sudo systemctl restart keepalived
+$ sudo systemctl status keepalived
+● keepalived.service - Keepalive Daemon (LVS and VRRP)
+     Loaded: loaded (/usr/lib/systemd/system/keepalived.service; enabled; preset: enabled)
+     Active: active (running) since Sun 2026-03-29 13:29:19 WIB; 1s ago
+       Docs: man:keepalived(8)
+             man:keepalived.conf(5)
+             man:genhash(1)
+             https://keepalived.org
+   Main PID: 1597 (keepalived)
+      Tasks: 2 (limit: 4601)
+     Memory: 1.8M (peak: 2.2M)
+        CPU: 23ms
+     CGroup: /system.slice/keepalived.service
+             ├─1597 /usr/sbin/keepalived --dont-fork
+             └─1598 /usr/sbin/keepalived --dont-fork
+
+Mar 29 13:29:19 load-balancer Keepalived[1597]: Starting Keepalived v2.2.8 (04/04,2023), git commit v2.2.7-154-g292b299e+
+Mar 29 13:29:19 load-balancer systemd[1]: Started keepalived.service - Keepalive Daemon (LVS and VRRP).
+Mar 29 13:29:19 load-balancer Keepalived[1597]: Running on Linux 6.8.0-106-generic #106-Ubuntu SMP PREEMPT_DYNAMIC Fri Mar  6 07:58:08 UTC 2026 (built for Lin>
+Mar 29 13:29:19 load-balancer Keepalived[1597]: Command line: '/usr/sbin/keepalived' '--dont-fork'
+Mar 29 13:29:19 load-balancer Keepalived[1597]: Configuration file /etc/keepalived/keepalived.conf
+Mar 29 13:29:19 load-balancer Keepalived[1597]: NOTICE: setting config option max_auto_priority should result in better keepalived performance
+Mar 29 13:29:19 load-balancer Keepalived[1597]: Starting VRRP child process, pid=1598
+Mar 29 13:29:19 load-balancer Keepalived[1597]: Startup complete
+Mar 29 13:29:19 load-balancer Keepalived_vrrp[1598]: (VI_1) Entering BACKUP STATE (init)
+Mar 29 13:29:20 load-balancer Keepalived_vrrp[1598]: (VI_1) received lower priority (100) advert from 192.168.4.251 - discarding
+
+
+###Konfigurasi untuk VM2
+$ sudo nano /etc/keepalived/keepalived.conf
+vrrp_instance VI_1 {
+    state BACKUP
+    interface enp0s3
+    virtual_router_id 51
+    priority 100
+    advert_int 1
+
+    authentication {
+        auth_type PASS
+        auth_pass 1234
+    }
+
+    virtual_ipaddress {
+        192.168.4.100
+    }
+}
+
+
+$ sudo systemctl restart keepalived
+$ sudo systemctl status keepalived.service 
+● keepalived.service - Keepalive Daemon (LVS and VRRP)
+     Loaded: loaded (/usr/lib/systemd/system/keepalived.service; enabled; preset: enabled)
+     Active: active (running) since Sun 2026-03-29 13:28:52 WIB; 2s ago
+       Docs: man:keepalived(8)
+             man:keepalived.conf(5)
+             man:genhash(1)
+             https://keepalived.org
+   Main PID: 1672 (keepalived)
+      Tasks: 2 (limit: 4601)
+     Memory: 1.8M (peak: 2.1M)
+        CPU: 7ms
+     CGroup: /system.slice/keepalived.service
+             ├─1672 /usr/sbin/keepalived --dont-fork
+             └─1673 /usr/sbin/keepalived --dont-fork
+
+Mar 29 13:28:52 APP1 systemd[1]: Starting keepalived.service - Keepalive Daemon (LVS and VRRP)...
+Mar 29 13:28:52 APP1 Keepalived[1672]: Starting Keepalived v2.2.8 (04/04,2023), git commit v2.2.7-154-g292b299e+
+Mar 29 13:28:52 APP1 systemd[1]: Started keepalived.service - Keepalive Daemon (LVS and VRRP).
+Mar 29 13:28:52 APP1 Keepalived[1672]: Running on Linux 6.8.0-106-generic #106-Ubuntu SMP PREEMPT_DYNAMIC Fri Mar  6 07:58:08 UTC 2026 (built for Linux 6.8.0)
+Mar 29 13:28:52 APP1 Keepalived[1672]: Command line: '/usr/sbin/keepalived' '--dont-fork'
+Mar 29 13:28:52 APP1 Keepalived[1672]: Configuration file /etc/keepalived/keepalived.conf
+Mar 29 13:28:52 APP1 Keepalived[1672]: NOTICE: setting config option max_auto_priority should result in better keepalived performance
+Mar 29 13:28:52 APP1 Keepalived[1672]: Starting VRRP child process, pid=1673
+Mar 29 13:28:52 APP1 Keepalived[1672]: Startup complete
+Mar 29 13:28:52 APP1 Keepalived_vrrp[1673]: (VI_1) Entering BACKUP STATE (init)
