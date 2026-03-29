@@ -215,3 +215,51 @@ $ cd /var/www/
 total 304788
 drwxr-xr-x 2 root root      4096 Mar 29 10:56 html
 -rw-r--r-- 1 root root 312092890 Mar 26 22:41 latest.zip
+
+$ sudo unzip latest.zip
+:/var/www$ ls -l
+total 304792
+drwxr-xr-x  2 root root      4096 Mar 29 10:59 html
+-rw-r--r--  1 root root 312092890 Mar 26 22:41 latest.zip
+drwxr-xr-x 14 root root      4096 Mar 26 22:37 nextcloud
+
+$ sudo chown -R www-data:www-data nextcloud
+
+$ cd
+
+$ sudo ln -s /etc/nginx/sites-available/nextcloud /etc/nginx/sites-enabled/
+$ sudo nginx -t
+2026/03/29 11:37:42 [warn] 13203#13203: conflicting server name "_" on 0.0.0.0:80, ignored
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+$ sudo systemctl restart nginx
+
+###Masuk ke VM1
+$ sudo apt install -y haproxy
+$ sudo apt list haproxy
+Listing... Done
+haproxy/noble-updates,now 2.8.16-0ubuntu0.24.04.1 amd64 [installed]
+N: There are 2 additional versions. Please use the '-a' switch to see them.
+
+$ sudo vim /etc/haproxy/haproxy.cfg
+global
+    log /dev/log local0
+    maxconn 2000
+
+defaults
+    mode http
+    timeout connect 5s
+    timeout client 50s
+    timeout server 50s
+
+frontend http_front
+    bind *:80
+    default_backend nextcloud_backend
+
+backend nextcloud_backend
+    balance roundrobin
+    option httpchk
+    server vm2 192.168.4.251:80 check
+    server vm3 192.168.4.252:80 check
+
+$ sudo systemctl restart haproxy
